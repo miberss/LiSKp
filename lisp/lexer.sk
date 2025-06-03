@@ -1,3 +1,35 @@
+import:
+	java.util.HashMap
+	java.util.HashSet
+
+using for loops
+using script reflection
+
+on script load:
+	set {-allowed_symbols} to new HashSet()
+	for {_c} in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=<>!?_" split at "":
+		{-allowed_symbols}.add({_c})
+
+	set {-handlers} to new HashMap()
+	{-handlers}.put("(", fn("read_lparen"))
+	{-handlers}.put(")", fn("read_rparen"))
+	{-handlers}.put("""", fn("read_string"))
+	for {_c} in ("0123456789" split at ""):
+		{-handlers}.put({_c}, fn("read_number"))
+	for {_c} in ...{-allowed_symbols}:
+		{-handlers}.put({_c}, fn("read_symbol"))
+
+###
+function lex(inputs: strings):
+	for {_input} in {_inputs::*}:
+		set {_lexer} to new_lexer({_input})
+		set {_token} to next_token({_lexer})
+		while {_token}->type != {TokenType}->EOF:
+			sm_log("[1]  |  {2}", ({_token}->type, {_token}->text))
+			set {_token} to next_token({_lexer})
+		sm_log("[1]  |  {2}", ({_token}->type, {_token}->text))
+###
+
 function new_lexer(input: string) :: struct:
 	return LexerState({_input}, 0, length of {_input} + 1)
 
@@ -6,16 +38,10 @@ function next_token(lexer: struct) :: struct:
 
 	if {_lexer}->pos >= {_lexer}->length:
 		return Token({TokenType}->EOF, "EOF")
-	else if match({_lexer}, "(") = true:
-		return Token({TokenType}->LPAREN, "(")
-	else if match({_lexer}, ")") = true:
-		return Token({TokenType}->RPAREN, ")")
-	else if is_digit(peek({_lexer})) = true:
-		return read_number({_lexer})
-	else if is_symbol(peek({_lexer})) = true:
-		return read_symbol({_lexer})
-	else if peek({_lexer}) = """":
-		return read_string({_lexer})
+
+	set {_c} to peek({_lexer})
+	if {-handlers}.containsKey({_c}):
+		return result of {-handlers}.get({_c}) with args ({_lexer})
 
 	advance({_lexer})
 	return next_token({_lexer})
@@ -29,26 +55,28 @@ function is_digit(string: string) :: boolean:
 	return whether "%{_string} parsed as number%" = {_string}
 
 function is_symbol(string: string) :: boolean:
-	if any:
-		{_string} is alphanumeric
-		{_string} is ("+", "-", "*" or "/")
-	then:
-		return true 
-	return false 
+	return {-allowed_symbols}.contains({_string})
+
+function read_while(lexer: struct, condition: function, token_type: object) :: struct:
+	set {_start} to {_lexer}->pos
+	while {_lexer}->pos < {_lexer}->length:
+		exit loop if result of ({_condition}) with args (peek({_lexer})) = false
+		advance({_lexer})
+	return Token({_token_type}, sub({_lexer}->input, {_start}, {_lexer}->pos - 1))
+
+function read_lparen(lexer: struct) :: struct:
+	advance({_lexer})
+	return Token({TokenType}->LPAREN, "(")
+
+function read_rparen(lexer: struct) :: struct:
+	advance({_lexer})
+	return Token({TokenType}->RPAREN, ")")
 
 function read_number(lexer: struct) :: struct:
-	set {_start} to {_lexer}->pos
-	while {_lexer}->pos < {_lexer}->length:
-		exit loop if is_digit(peek({_lexer})) = false
-		advance({_lexer})
-	return Token({TokenType}->INT, sub({_lexer}->input, {_start}, {_lexer}->pos - 1))
+    return read_while({_lexer}, fn("is_digit"), {TokenType}->INT)
 
 function read_symbol(lexer: struct) :: struct:
-	set {_start} to {_lexer}->pos
-	while {_lexer}->pos < {_lexer}->length:
-		exit loop if is_symbol(peek({_lexer})) = false
-		advance({_lexer})
-	return Token({TokenType}->SYMBOL, sub({_lexer}->input, {_start}, {_lexer}->pos - 1))
+    return read_while({_lexer}, fn("is_symbol"), {TokenType}->SYMBOL)
 
 function read_string(lexer: struct) :: struct:
 	advance({_lexer})
@@ -56,15 +84,8 @@ function read_string(lexer: struct) :: struct:
 	while {_lexer}->pos < {_lexer}->length:
 		exit loop if peek({_lexer}) = """"
 		advance({_lexer})
-	set {_str} to sub({_lexer}->input, {_start}, {_lexer}->pos - 1)
 	advance({_lexer})
-	return Token({TokenType}->STRING, {_str})
-
-function match(lexer: struct, expected: string) :: boolean:
-	if peek({_lexer}) = {_expected}:
-		advance({_lexer})
-		return true
-	return false 
+	return Token({TokenType}->STRING, sub({_lexer}->input, {_start}, {_lexer}->pos - 2))
 
 function peek(lexer: struct) :: string:
 	return character at {_lexer}->pos in {_lexer}->input

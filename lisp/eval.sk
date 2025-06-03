@@ -92,6 +92,11 @@ function call_function(func: string, args: objects, env: struct) :: object:
 	else if {_func} is "^":
 		return ({_args::1} ^ {_args::2})
 	else if {_func} is "reverse":
-		return (join (reversed ({_args::1} split at "")))	
+		return (join (reversed ({_args::1} split at "")))
+	else if {_func} is "print":
+		return builtin_print({_args::*})	
 	throw runtime warning "Unknown function %{_func}%"
 
+function builtin_print(args: objects) :: object:
+	for {_arg} in {_args::*}:
+		broadcast {_arg}

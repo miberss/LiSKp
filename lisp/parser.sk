@@ -35,8 +35,6 @@ function parse_expression(state: struct) :: struct:
 
 	else if {_type} = {TokenType}->STRING:
 		set {_str} to {_state}->token->text
-		# Remove surrounding quotes, if you want
-		# (depends if lexer includes quotes or not)
 		advance_token({_state})
 		return SExpression({SExpressionType}->STRING, {_str})
 
@@ -52,7 +50,6 @@ function parse_list(state: struct) :: struct:
 	consume({_state}, {TokenType}->RPAREN)
 
 	return SExpression({SExpressionType}->LIST, {_exprs::*})
-
 
 function consume(state: struct, type: integer):
 	if {_state}->token->type != {_type}:
