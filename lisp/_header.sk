@@ -59,7 +59,19 @@ function SExpression(type: integer, value: objects) :: struct:
 		type: {_type}
 		value: {_value::*}
 
+struct Function:
+	params: objects
+	body: struct
+	env: struct
+
+function Function(params: objects, body: struct, env: struct) :: struct:
+	return Function struct:
+		params: {_params::*}
+		body: {_body}
+		env: {_env}
+
 struct Environment:
+	parent: struct
 	variables: object
 	special_forms: object
 

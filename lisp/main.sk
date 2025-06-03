@@ -15,7 +15,7 @@ function main(file_name: string = "hello_world.lsp") :: object:
 	sm_log("[1]", {_output})
 
 on script load:
-	main()
+	main("lambda.lsp")
 
 function default_env() :: struct:
 	set {_env} to Environment()
@@ -26,12 +26,18 @@ function default_env() :: struct:
 	{_variables}.put("-", "-")
 	{_variables}.put("/", "/")
 	{_variables}.put("^", "^")
+	{_variables}.put("<", "<")
+	{_variables}.put(">", ">")
+	{_variables}.put("=", "=")
+	{_variables}.put("<=", "<=")
+	{_variables}.put(">=", ">=")
 	{_variables}.put("reverse", "reverse")
 	{_variables}.put("print", "print")
 	set {_env}->variables to {_variables}
 
 	set {_special_forms} to new HashMap()
 	{_special_forms}.put("define", "define")
+	{_special_forms}.put("lambda", "lambda")
 	{_special_forms}.put("if", "if")
 	{_special_forms}.put("and", "and")
 	{_special_forms}.put("or", "or")

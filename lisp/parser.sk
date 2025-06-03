@@ -9,7 +9,7 @@ function parse(inputs: strings) :: string:
 		set {_state} to ParserState({_lexer}, {_token})
 		set {_expr} to parse_expression({_state})
 		set {_result::*} to eval({_expr}, {_env})
-		sm_log("%{_result::*}% %debug_dump({_expr})%")
+		# sm_log("%{_result::*}% %debug_dump({_expr})%")
 	return "finish"
 
 function parse_expression(state: struct) :: struct:

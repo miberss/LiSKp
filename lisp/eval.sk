@@ -7,42 +7,58 @@ using for loops
 function eval(expr: struct, env: struct) :: objects:
 	set {_type} to {_expr}->type
 
-	if {_type} = {SExpressionType}->INTEGER:
+	# sm_log("%{_type}%")
+
+	if {_type} = {SExpressionType}->INTEGER, {SExpressionType}->STRING, or {SExpressionType}->BOOLEAN:
 		return {_expr}->value
 
 	else if {_type} = {SExpressionType}->SYMBOL:
-		return {_env}->variables.get({_expr}->value)
-
-	else if {_type} = {SExpressionType}->BOOLEAN:
-		return {_expr}->value
-
-	else if {_type} = {SExpressionType}->STRING:
-		return {_expr}->value
+		return find_through_closures({_expr}, {_env})
 
 	else if {_type} = {SExpressionType}->LIST:
 		set {_items::*} to {_expr}->value
 		set {_head} to {_items::1}
 
-		if {_head}->type != {SExpressionType}->SYMBOL:
-			throw runtime warning "Expected function name or special form, got %{_head}->type%"
-
 		set {_name} to 1st element of {_head}->value
+		# sm_log("{1}", "%{_name}%")
 
 		if {_env}->special_forms.containsKey({_name}):
 			# sm_log("special_form {1}", {_name})
 			return eval_special_form({_name}, {_items::*}, {_env})
 
-		set {_op} to 1st element of eval({_items::1}, {_env})
+		set {_op::*} to eval({_items::1}, {_env})
 
 		for {_i} in range(2, size of {_items::*}):
 			set {_args::*} to {_args::*}, eval({_items::%{_i}%}, {_env})
+		
+		# sm_log("item::1 [1] ([2])", ("%{_items::1}%", "%debug_dump({_items::1})%"))
 
-		# sm_log("function {1}, (op: [2], args: [3], items: [4])", ({_name}, {_op}, "%{_args::*}%", "%{_items::*}%"))
+		set {_op} to ({_op::1} ? 1st element of {_items::1}->value)
+
+		# sm_log("function {1}, (op: [2], args: [3], items: [4])", ("%{_name}%", "%{_op}%", "%{_args::*}%", "%{_items::*}%"))
 		return call_function({_op}, {_args::*}, {_env})
 
-		
-
 	throw runtime warning "Unknown expression type %{_type}%"
+
+function find_through_closures(expr: struct, env: struct, depth: integer = 0) :: object:
+	set {_depth} to {_depth} + 1
+	if {_depth} > 16:
+		# sm_log("searched too deep [1]", "%{_expr}->value%")
+		stop
+	set {_var} to {_env}->variables.get({_expr}->value)
+	if {_var} is not set:
+		if {_env}->parent is not set:
+			throw runtime warning "Unknown symbol %{_expr}->value%"
+		return find_through_closures({_expr}, {_env}->parent, {_depth})
+	# sm_log("found symbol [1]", "%{_expr}->value%, value: %{_var}%")
+	return {_var}
+
+function new_env(parent: struct) :: struct:
+	set {_env} to Environment()
+	set {_env}->parent to {_parent}
+	set {_env}->variables to new HashMap()
+	set {_env}->special_forms to ({_parent}->special_forms)
+	return {_env}
 
 function eval_special_form(name: string, items: objects, env: struct) :: object:
 	if {_name} = "define":
@@ -50,9 +66,16 @@ function eval_special_form(name: string, items: objects, env: struct) :: object:
 		if {_symbol_expr}->type != {SExpressionType}->SYMBOL:
 			throw runtime warning "define: expected symbol"
 		set {_symbol} to 1st element of {_symbol_expr}->value
-		set {_value} to 1st element of eval({_items::3}, {_env})
-		{_env}->variables.put({_symbol}, {_value})
-		return {_value}
+		set {_value::*} to eval({_items::3}, {_env})
+		# sm_log("Define [1]", "%{_value::*}%")
+		{_env}->variables.put({_symbol}, {_value::1})
+		return {_value::1}
+
+	else if {_name} = "lambda":
+		for {_item} in {_items::2}->value:
+			set {_params::*} to {_params::*}, {_item}->value
+		set {_body} to {_items::3}
+		return Function({_params::*}, {_body}, {_env})
 	
 	else if {_name} = "if":
 		set {_condition} to 1st element of eval({_items::2}, {_env})
@@ -80,8 +103,15 @@ function eval_special_form(name: string, items: objects, env: struct) :: object:
 
 	throw runtime warning "Unknown special form %{_name}%"
 
-function call_function(func: string, args: objects, env: struct) :: object:
-	if {_func} is "+":
+function call_function(func: object, args: objects, env: struct) :: objects:
+	if template of {_func} = "function":
+		
+		set {_local_env} to new_env({_env})
+		for {_i}, {_param} in {_func}->params:
+			{_local_env}->variables.put({_param}, {_args::%{_i}%})
+		# sm_log("Called a Lambda: Body: [1], Variables: [2], Params: [3]", ({_func}->body->value, {_func}->env->variables, {_func}->params))
+		return eval({_func}->body, {_local_env})
+	else if {_func} is "+":
 		return sum({_args::*})
 	else if {_func} is "*":
 		return product({_args::*})
@@ -91,6 +121,16 @@ function call_function(func: string, args: objects, env: struct) :: object:
 		return ({_args::1} / {_args::2})
 	else if {_func} is "^":
 		return ({_args::1} ^ {_args::2})
+	else if {_func} is "<":
+		return whether ({_args::1} < {_args::2})
+	else if {_func} is ">":
+		return whether ({_args::1} > {_args::2})
+	else if {_func} is "=":
+		return whether ({_args::1} = {_args::2})
+	else if {_func} is ">=":
+		return whether ({_args::1} >= {_args::2})
+	else if {_func} is "<=":
+		return whether ({_args::1} <= {_args::2})
 	else if {_func} is "reverse":
 		return (join (reversed ({_args::1} split at "")))
 	else if {_func} is "print":
