@@ -1,0 +1,39 @@
+import:
+	java.util.HashMap
+
+using script reflection
+
+function main(file_name: string = "hello_world.lisp") :: object:
+	set {_path} to "plugins/Skript/scripts/lisp/example/"
+	set {_file} to {_path} + {_file_name}
+
+	set {_input::*} to file_read_lines({_file})
+
+	sm_log("Output of {1}:", ({_file_name}))
+	sm_log("[1] -> ", join {_input::*} with "; ")
+
+	set {_output} to parse({_input::*})
+
+	sm_log("[1]", {_output})
+
+on script load:
+	main()
+
+function default_env() :: struct:
+	set {_env} to Environment()
+	set {_variables} to new HashMap()
+	set {_special_forms} to new HashMap()
+	{_variables}.put("+", "+")
+	{_variables}.put("*", "*")
+	{_variables}.put("-", "-")
+	{_variables}.put("/", "/")
+	{_variables}.put("^", "^")
+	{_variables}.put("reverse", "reverse")
+	{_special_forms}.put("define", "define")
+	{_special_forms}.put("if", "if")
+	{_special_forms}.put("and", "and")
+	{_special_forms}.put("or", "or")
+	{_special_forms}.put("not", "not")
+	set {_env}->variables to {_variables}
+	set {_env}->special_forms to {_special_forms}
+	return {_env}

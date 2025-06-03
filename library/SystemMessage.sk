@@ -1,0 +1,100 @@
+# This module provides a system for formatting strings into
+# neat, good-looking messages. You can optionally pass in
+# inputs to replace in the message.
+# 
+# This module requires the following other modules: NONE
+
+using for loops
+
+on script load:
+	set {-mib_lib::color::main} to "<#fff1e8>"
+	set {-mib_lib::color::accent} to "<#ffccaa>"
+	set {-mib_lib::color::info} to "<#29adff>"
+	set {-mib_lib::color::warning} to "<#ffa300>"
+	set {-mib_lib::color::error} to "<#ff004d>"
+	set {-mib_lib::color::success} to "<#008751>"
+
+options:
+	main: %{-mib_lib::color::main}% 
+	accent: %{-mib_lib::color::accent}%
+	prefix: [lisp]
+
+function sm_log(msg: string, inputs: objects = {_}):
+	admin_log( sm( "info", {_msg}, {_inputs::*} ) )
+	
+
+#> Generates a formatted system message string with optional value substitution and color formatting.
+#> Placeholders in the message string can be replaced with input values, supporting three styles:
+#> - (%1%) for normal substitution
+#> - [%1%] for accent-colored substitution
+#> - {%1%} for accent-colored substitution in quotes.
+#> The message level controls the color prefix applied to the message.
+#>
+#> @param level The severity or type of the message, used to determine color styling via get_mib_color(level)
+#> @param msg The message template, which may include placeholders (%1%), [%1%], or {%1%}
+#> @param inputs (optional) A list of values to substitute into the message
+#>
+#> @return The fully formatted message string with substitutions and color formatting applied
+function system_message(level: string, msg: string, inputs: objects = {_}) :: string:
+	set {_prefix} to formatted "%get_mib_color({_level})%{@prefix}{@main}"
+	
+	if {_inputs::1} is not set:
+		return formatted "%{_prefix}% %{_msg}%"
+
+	for {_index}, {_value} in {_inputs::*}:
+		set {_msg} to join (regex split {_msg} by "(?<!\\)\(%{_index}%\)") with "%{_value}%{@main}"
+		set {_msg} to join (regex split {_msg} by "(?<!\\)\[%{_index}%\]") with "{@accent}%{_value}%{@main}"
+		set {_msg} to join (regex split {_msg} by "(?<!\\)\{%{_index}%\}") with """{@accent}%{_value}%{@main}"""
+
+	replace all "\(" with "(" in {_msg}
+	replace all "\[" with "[" in {_msg}
+	replace all "\{" with "{" in {_msg}
+	
+	return formatted "%{_prefix}% %{_msg}%"
+
+#> Shorthand for system_message function
+function sm(level: string, msg: string, inputs: objects = {_}) :: string:
+	return system_message({_level}, {_msg}, {_inputs::*})
+
+#> Returns a perfectly `pixels` wide space string.
+#> The space is constructed by combining regular spaces (4 pixels wide each) and zero width characters
+#> for any remaining pixels. May need to use `zero()` to align properly in both console and chat.
+#>
+#> @param pixels The total pixel width of the space to generate
+#> @param after_format (optional) Additional formatting to apply after the space. Defaults to the current {@main} format
+#>
+#> @return A string containing the constructed space with precise pixel width
+function space(pixels: integer, after_format: string = {_}) :: string:
+	set {_space} to floor({_pixels} / 4)
+	set {_zero} to {_pixels} - ({_space} * 4)
+
+	new string joined with "" stored in {_space_string}:
+		" " repeated {_space} times
+		"<bold>"
+		zero({_zero})
+		"<reset>"
+		{_after_format} ? {@main}
+		
+	return {_space_string}
+
+#> Get zero width characters, useful for aligning
+#> in console -> to get an space that is visible to console, but not chat
+#> in chat -> combine with bold formatting to get a singular pixel space
+#> 
+#> @param times Amount of zero width characters
+#> @return The zero width characters
+function zero(times: integer) :: string:
+	return ((character at codepoint 8204) repeated {_times} times) ? ""
+
+#> Returns the color of mib_lib's formatting, for use internally.
+#> 
+#> @param level
+#> @return The level's color
+function get_mib_color(level: string) :: string:
+	return {-mib_lib::color::%{_level}%}
+
+#> Sends a formatted message to console and all operators 
+#> 
+#> @param message The message
+function admin_log(message: string):
+	send formatted ({_message}) to (console and all operators)

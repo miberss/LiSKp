@@ -1,0 +1,89 @@
+using for loops
+
+
+function parse(inputs: strings) :: string:
+	set {_env} to default_env()
+	for {_input} in {_inputs::*}:
+		set {_lexer} to new_lexer({_input})
+		set {_token} to next_token({_lexer})
+		set {_state} to ParserState({_lexer}, {_token})
+		set {_expr} to parse_expression({_state})
+		set {_result::*} to eval({_expr}, {_env})
+		sm_log("%{_result::*}% %debug_dump({_expr})%")
+	return "finish"
+
+function parse_expression(state: struct) :: struct:
+	set {_type} to {_state}->token->type
+	set {_peeked} to peek({_state}->lexer)
+
+	if {_type} = {TokenType}->LPAREN:
+		return parse_list({_state})
+	
+	else if {_type} = {TokenType}->SYMBOL:
+		set {_symbol} to {_state}->token->text
+		advance_token({_state})
+		if {_symbol} = "true":
+			return SExpression({SExpressionType}->BOOLEAN, true)
+		else if {_symbol} is "false":
+			return SExpression({SExpressionType}->BOOLEAN, false)
+		return SExpression({SExpressionType}->SYMBOL, {_symbol})
+
+	else if {_type} = {TokenType}->INT:
+		set {_num} to {_state}->token->text parsed as number
+		advance_token({_state})
+		return SExpression({SExpressionType}->INTEGER, {_num})
+
+	else if {_type} = {TokenType}->STRING:
+		set {_str} to {_state}->token->text
+		# Remove surrounding quotes, if you want
+		# (depends if lexer includes quotes or not)
+		advance_token({_state})
+		return SExpression({SExpressionType}->STRING, {_str})
+
+	
+	throw runtime warning "Expected token type %{_type}%, but got %{_state}->token->type% ('%{_state}->token->text%')"
+	
+function parse_list(state: struct) :: struct:
+	consume({_state}, {TokenType}->LPAREN)
+
+	while {_state}->token->type != {TokenType}->RPAREN:
+		set {_exprs::%loop-counter%} to parse_expression({_state})
+
+	consume({_state}, {TokenType}->RPAREN)
+
+	return SExpression({SExpressionType}->LIST, {_exprs::*})
+
+
+function consume(state: struct, type: integer):
+	if {_state}->token->type != {_type}:
+		throw runtime warning "Expected token type %{_type}%"
+	advance_token({_state})
+
+function advance_token(state: struct):
+	set {_state}->token to next_token({_state}->lexer)
+
+function debug_dump(expr: struct) :: string:
+	set {_type} to {_expr}->type
+
+	if {_type} = {SExpressionType}->LIST:
+		set {_result} to "{LIST=("
+		for {_value} in {_expr}->value:
+			set {_printed} to debug_dump({_value})
+			set {_result} to "%{_result}% %{_printed}%"
+		set {_result} to "%{_result}% ) }"
+		return {_result}
+	
+	else if {_type} = {SExpressionType}->SYMBOL:
+		return "{SYMBOL=%{_expr}->value%}"
+	
+	else if {_type} = {SExpressionType}->INTEGER:
+		return "{INTEGER=%{_expr}->value%}"
+
+	else if {_type} = {SExpressionType}->BOOLEAN:
+		return "{BOOLEAN=%{_expr}->value%}"
+
+	else if {_type} = {SExpressionType}->STRING:
+		return "{STRING=""%{_expr}->value%""}"
+
+	
+	throw runtime warning "Unknown expression type %{_type}%"

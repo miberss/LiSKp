@@ -1,0 +1,67 @@
+import:
+	java.util.HashMap
+
+on script load:
+	suppress variable save warning
+	set {TokenType} to TokenType struct
+	set {SExpressionType} to SExpressionType struct
+
+struct TokenType:
+	const EOF: integer = -1
+	const LPAREN: integer = 0
+	const RPAREN: integer = 1
+	const INT: integer = 2
+	const SYMBOL: integer = 3
+	const STRING: integer = 4
+
+struct SExpressionType:
+	const INTEGER: integer = 0
+	const SYMBOL: integer = 1
+	const BOOLEAN: integer = 2
+	const STRING: integer = 3
+	const LIST: integer = 4
+
+struct LexerState:
+	input: string
+	pos: integer
+	length: integer
+
+function LexerState(input: string, pos: integer, length: integer) :: struct:
+	return LexerState struct:
+		input: {_input}
+		pos: {_pos}
+		length: {_length}
+
+struct Token:
+	type: integer
+	text: string = ""
+
+function Token(type: integer, text: string) :: struct:
+	return Token struct:
+		type: {_type}
+		text: {_text}
+
+struct ParserState:
+	lexer: struct
+	token: struct
+
+function ParserState(lexer: struct, token: struct) :: struct:
+	return ParserState struct:
+		lexer: {_lexer}
+		token: {_token}
+
+struct SExpression:
+	type: integer
+	value: objects
+
+function SExpression(type: integer, value: objects) :: struct:
+	return SExpression struct:
+		type: {_type}
+		value: {_value::*}
+
+struct Environment:
+	variables: object
+	special_forms: object
+
+function Environment() :: struct:
+    return Environment struct

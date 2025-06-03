@@ -1,0 +1,76 @@
+function new_lexer(input: string) :: struct:
+	return LexerState({_input}, 0, length of {_input} + 1)
+
+function next_token(lexer: struct) :: struct:
+	skip_whitespace({_lexer})
+
+	if {_lexer}->pos >= {_lexer}->length:
+		return Token({TokenType}->EOF, "EOF")
+	else if match({_lexer}, "(") = true:
+		return Token({TokenType}->LPAREN, "(")
+	else if match({_lexer}, ")") = true:
+		return Token({TokenType}->RPAREN, ")")
+	else if is_digit(peek({_lexer})) = true:
+		return read_number({_lexer})
+	else if is_symbol(peek({_lexer})) = true:
+		return read_symbol({_lexer})
+	else if peek({_lexer}) = """":
+		return read_string({_lexer})
+
+	advance({_lexer})
+	return next_token({_lexer})
+
+function skip_whitespace(lexer: struct):
+	while {_lexer}->pos < {_lexer}->length:
+		exit loop if peek({_lexer}) is not " "
+		advance({_lexer})
+
+function is_digit(string: string) :: boolean:
+	return whether "%{_string} parsed as number%" = {_string}
+
+function is_symbol(string: string) :: boolean:
+	if any:
+		{_string} is alphanumeric
+		{_string} is ("+", "-", "*" or "/")
+	then:
+		return true 
+	return false 
+
+function read_number(lexer: struct) :: struct:
+	set {_start} to {_lexer}->pos
+	while {_lexer}->pos < {_lexer}->length:
+		exit loop if is_digit(peek({_lexer})) = false
+		advance({_lexer})
+	return Token({TokenType}->INT, sub({_lexer}->input, {_start}, {_lexer}->pos - 1))
+
+function read_symbol(lexer: struct) :: struct:
+	set {_start} to {_lexer}->pos
+	while {_lexer}->pos < {_lexer}->length:
+		exit loop if is_symbol(peek({_lexer})) = false
+		advance({_lexer})
+	return Token({TokenType}->SYMBOL, sub({_lexer}->input, {_start}, {_lexer}->pos - 1))
+
+function read_string(lexer: struct) :: struct:
+	advance({_lexer})
+	set {_start} to {_lexer}->pos
+	while {_lexer}->pos < {_lexer}->length:
+		exit loop if peek({_lexer}) = """"
+		advance({_lexer})
+	set {_str} to sub({_lexer}->input, {_start}, {_lexer}->pos - 1)
+	advance({_lexer})
+	return Token({TokenType}->STRING, {_str})
+
+function match(lexer: struct, expected: string) :: boolean:
+	if peek({_lexer}) = {_expected}:
+		advance({_lexer})
+		return true
+	return false 
+
+function peek(lexer: struct) :: string:
+	return character at {_lexer}->pos in {_lexer}->input
+
+function sub(string: string, start: integer = {_}, end: integer = {_}):: string:
+	return subtext of {_string} from index {_start} to index {_end}
+
+function advance(lexer: struct):
+	set {_lexer}->pos to {_lexer}->pos + 1
