@@ -51,11 +51,11 @@ function skip_whitespace(lexer: struct):
 		exit loop if peek({_lexer}) is not " "
 		advance({_lexer})
 
-function is_digit(string: string) :: boolean:
-	return whether "%{_string} parsed as number%" = {_string}
+function is_digit(c: string) :: boolean:
+	return whether "%{_c} parsed as number%" = {_c}
 
-function is_symbol(string: string) :: boolean:
-	return {-allowed_symbols}.contains({_string})
+function is_symbol(c: string) :: boolean:
+	return {-allowed_symbols}.contains({_c})
 
 function read_while(lexer: struct, condition: function, token_type: object) :: struct:
 	set {_start} to {_lexer}->pos
@@ -90,8 +90,8 @@ function read_string(lexer: struct) :: struct:
 function peek(lexer: struct) :: string:
 	return character at {_lexer}->pos in {_lexer}->input
 
-function sub(string: string, start: integer = {_}, end: integer = {_}):: string:
-	return subtext of {_string} from index {_start} to index {_end}
+function sub(string: string, start: integer = 1, end: integer = {_}) :: string:
+	return subtext of {_string} from index {_start} to index ({_end} ? length of {_string})
 
 function advance(lexer: struct):
 	set {_lexer}->pos to {_lexer}->pos + 1

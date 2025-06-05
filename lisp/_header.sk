@@ -60,20 +60,24 @@ function SExpression(type: integer, value: objects) :: struct:
 		value: {_value::*}
 
 struct Function:
+	id: string
 	params: objects
 	body: struct
 	env: struct
 
-function Function(params: objects, body: struct, env: struct) :: struct:
+function Function(params: objects, body: struct, env: struct, id: string = {_}) :: struct:
 	return Function struct:
+		id: {_id}
 		params: {_params::*}
 		body: {_body}
 		env: {_env}
 
 struct Environment:
+	id: string
 	parent: struct
 	variables: object
 	special_forms: object
 
-function Environment() :: struct:
-    return Environment struct
+function Environment(id: string = {_}) :: struct:
+	return Environment struct:
+		id: {_id}

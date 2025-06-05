@@ -9,16 +9,15 @@ function main(file_name: string = "hello_world.lsp") :: object:
 
 	sm_log("Output of {1}:", ({_file_name}))
 	sm_log("[1] -> ", join {_input::*} with "; ")
-
+	set {_now} to now
 	set {_output} to parse({_input::*})
-
-	sm_log("[1]", {_output})
+	sm_log("parsed [1] in [2]ms", ({_output}, time since {_now} / 1 tick * 100))
 
 on script load:
 	main("lambda.lsp")
 
 function default_env() :: struct:
-	set {_env} to Environment()
+	set {_env} to Environment("_ENV")
 
 	set {_variables} to new HashMap()
 	{_variables}.put("+", "+")

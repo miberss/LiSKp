@@ -10,7 +10,7 @@ function parse(inputs: strings) :: string:
 		set {_expr} to parse_expression({_state})
 		set {_result::*} to eval({_expr}, {_env})
 		# sm_log("%{_result::*}% %debug_dump({_expr})%")
-	return "finish"
+	return ""
 
 function parse_expression(state: struct) :: struct:
 	set {_type} to {_state}->token->type

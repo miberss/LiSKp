@@ -1,4 +1,3 @@
-
 import:
 	java.util.HashMap
 	
@@ -53,8 +52,8 @@ function find_through_closures(expr: struct, env: struct, depth: integer = 0) ::
 	# sm_log("found symbol [1]", "%{_expr}->value%, value: %{_var}%")
 	return {_var}
 
-function new_env(parent: struct) :: struct:
-	set {_env} to Environment()
+function new_env(parent: struct, id: string = {_}) :: struct:
+	set {_env} to Environment({_id})
 	set {_env}->parent to {_parent}
 	set {_env}->variables to new HashMap()
 	set {_env}->special_forms to ({_parent}->special_forms)
@@ -75,7 +74,8 @@ function eval_special_form(name: string, items: objects, env: struct) :: object:
 		for {_item} in {_items::2}->value:
 			set {_params::*} to {_params::*}, {_item}->value
 		set {_body} to {_items::3}
-		return Function({_params::*}, {_body}, {_env})
+		set {_base} to new_env({_env}, "lambda_base")
+		return Function({_params::*}, {_body}, {_base}, "lambda")
 	
 	else if {_name} = "if":
 		set {_condition} to 1st element of eval({_items::2}, {_env})
@@ -105,11 +105,11 @@ function eval_special_form(name: string, items: objects, env: struct) :: object:
 
 function call_function(func: object, args: objects, env: struct) :: objects:
 	if template of {_func} = "function":
-		
-		set {_local_env} to new_env({_env})
+		set {_local_env} to new_env({_func}->env, "execute_lambda")
 		for {_i}, {_param} in {_func}->params:
 			{_local_env}->variables.put({_param}, {_args::%{_i}%})
 		# sm_log("Called a Lambda: Body: [1], Variables: [2], Params: [3]", ({_func}->body->value, {_func}->env->variables, {_func}->params))
+		dump_env_tree({_local_env})
 		return eval({_func}->body, {_local_env})
 	else if {_func} is "+":
 		return sum({_args::*})
@@ -139,4 +139,10 @@ function call_function(func: object, args: objects, env: struct) :: objects:
 
 function builtin_print(args: objects) :: object:
 	for {_arg} in {_args::*}:
-		broadcast {_arg}
+		broadcast "%{_arg}%"
+
+function dump_env_tree(env: struct, depth: integer = 1):
+	set {_indent} to "  " repeated {_depth} times
+	sm_log("%{_indent}%[1] ⇒ [2]", ("%{_env}->id%", "%{_env}->variables.keySet()%"))
+	if {_env}->parent is set:
+		dump_env_tree({_env}->parent, {_depth} + 1)
