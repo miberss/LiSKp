@@ -16,9 +16,9 @@ struct TokenType:
 
 struct SExpressionType:
 	const INTEGER: integer = 0
-	const SYMBOL: integer = 1
-	const BOOLEAN: integer = 2
-	const STRING: integer = 3
+	const BOOLEAN: integer = 1
+	const STRING: integer = 2
+	const SYMBOL: integer = 3
 	const LIST: integer = 4
 
 struct LexerState:
@@ -78,6 +78,9 @@ struct Environment:
 	variables: object
 	special_forms: object
 
-function Environment(id: string = {_}) :: struct:
+function Environment(id: string = {_}, parent: struct = {_}, variables: object = {_}, special_form: object = {_}) :: struct:
 	return Environment struct:
 		id: {_id}
+		parent: {_parent}
+		variables: {_variables}
+		special_forms: {_special_form}

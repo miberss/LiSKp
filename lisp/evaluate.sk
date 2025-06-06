@@ -1,0 +1,47 @@
+import:
+	java.util.HashMap
+	
+using for loops
+using script reflection
+
+function evaluate(expr: struct, env: struct) :: objects:
+	return switch return ({_expr}->type):
+		case 0, 1, 2 -> {_expr}->value
+		case 3 -> find_through_closures({_expr}, {_env})
+		case 4 -> evaluate_list({_expr}, {_env})
+
+function evaluate_list(expr: struct, env: struct) :: objects:
+	set {_items::*} to {_expr}->value
+	set {_head::*} to {_items::1}->value
+	set {_name} to {_head::1}
+
+	set {_forms} to {_env}->special_forms
+	if {_forms}.containsKey({_name}):
+		return call_special_form({_forms}.get({_name}), {_items::*}, {_env})
+
+	for {_i} in range(2, size of {_items::*}):
+		set {_args::%{_i}%} to 1st element of evaluate({_items::%{_i}%}, {_env})
+	set {_op} to 1st element of evaluate({_items::1}, {_env})
+	return switch return (skript type of {_op}):
+		case "text" -> call_builtin({_op}, {_args::*})
+		case "struct" -> call_lambda({_op}, {_args::*})
+		
+
+function find_through_closures(expr: struct, env: struct) :: object:
+	set {_var} to {_env}->variables.get({_expr}->value)
+	return {_var} if {_var} is set
+	throw("Unknown symbol %{_expr}->value% in %{_env}->id%") if {_env}->parent is not set
+	return find_through_closures({_expr}, {_env}->parent)
+
+function new_env(parent: struct, id: string = {_}) :: struct:
+	return Environment({_id}, {_parent}, new HashMap(), {_parent}->special_forms)
+
+function call_lambda(fn: struct, args: objects) :: objects:
+	set {_env} to new_env({_fn}->env, "%{_fn}->id%_execute")
+	for {_i}, {_param} in {_fn}->params:
+		{_env}->variables.put({_param}, {_args::%{_i}%})
+	return evaluate({_fn}->body, {_env})
+
+function call_builtin(id: string, args: objects) :: objects:
+	set {_fn} to fn("builtin_%{_id}%") ? throw("Unknown function %{_id}%")
+	return results of {_fn} with arguments [{_args::*}]

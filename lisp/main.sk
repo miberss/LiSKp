@@ -11,7 +11,7 @@ function main(file_name: string = "hello_world.lsp") :: object:
 	loop {_input::*}:
 		sm_log("%loop-counter%: [1];", loop-value)
 	
-	set {_time} to parse({_input::*})
+	set {_time} to parse(join {_input::*} with "")
 	sm_log("parsed [1] in [2]", ({_file_name}, {_time}))
 
 on script load:
