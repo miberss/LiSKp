@@ -4,11 +4,10 @@ using for loops
 function call_special_form(name: string, items: objects, env: struct) :: objects:
 	set {_fn} to function "special_form_%{_name}%" from script "lisp/special_forms"
 	if {_fn} is not set:
-		throw runtime warning "Unknown function %{_name}%"
+		throw runtime warning "Unknown special_form %{_name}%"
 	set {_results::*} to results of {_fn} with arguments {_name}, [{_items::*}], {_env}
 	if {_results::*} is set:
 		return {_results::*}
-	throw runtime warning "Unknown special form %{_name}%"
 
 function special_form_define(name: string, items: object, env: struct) :: object:
 	set {_symbol_expr} to {_items}[1]
@@ -27,11 +26,10 @@ function special_form_lambda(name: string, items: object, env: struct) :: struct
 	set {_base} to new_env({_env}, "lambda_base")
 	return Function({_params::*}, {_body}, {_base}, "lambda")
 
-function special_form_if(name: string, items: object, env: struct) :: object:
-	set {_condition} to 1st element of eval({_items}[1], {_env})
-	if {_condition} is true:
-		return 1st element of eval({_items}[2], {_env})
-	return 1st element of eval({_items}[3], {_env})
+function special_form_if(name: string, items: object, env: struct) :: objects:
+	if eval({_items}[1], {_env}) = true:
+		return eval({_items}[2], {_env})
+	return eval({_items}[3], {_env})
 
 function special_form_and(name: string, items: object, env: struct) :: boolean:
 	loop range(1, size of ...[{_items}] - 1):

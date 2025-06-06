@@ -1,1 +1,1 @@
-(if (> 5 3) (print "yes") (print "no"))
+(if (== 1 1) (print "yes") (print "no"))

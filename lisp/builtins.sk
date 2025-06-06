@@ -7,28 +7,28 @@ function builtin_mul(args: object) :: object:
 	return product(...{_args})
 
 function builtin_sub(args: object) :: object:
-	return ({_args}[1] - {_args}[2])
+	return ({_args}[0] - {_args}[1])
 
 function builtin_div(args: object) :: object:
-	return ({_args}[1] / {_args}[2])
+	return ({_args}[0] / {_args}[1])
 
 function builtin_pow(args: object) :: object:
-	return ({_args}[1] ^ {_args}[2])
+	return ({_args}[0] ^ {_args}[1])
 
 function builtin_less_than(args: object) :: object:
-	return whether ({_args}[1] < {_args}[2])
+	return whether ({_args}[0] < {_args}[1])
 
 function builtin_greater_than(args: object) :: object:
-	return whether ({_args}[1] > {_args}[2])
+	return whether ({_args}[0] > {_args}[1])
 
 function builtin_equal(args: object) :: object:
-	return whether ({_args}[1] = {_args}[2])
+	return whether ({_args}[0] = {_args}[1])
 
 function builtin_less_than_or_equal(args: object) :: object:
-	return whether ({_args}[1] <= {_args}[2])
+	return whether ({_args}[0] <= {_args}[1])
 
 function builtin_greater_than_or_equal(args: object) :: object:
-	return whether ({_args}[1] >= {_args}[2])
+	return whether ({_args}[0] >= {_args}[1])
 
 function builtin_reverse(args: object) :: object:
 	return (join (reversed ({_args}[0] split at "")))
