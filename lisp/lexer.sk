@@ -7,7 +7,7 @@ using script reflection
 
 on script load:
 	set {-allowed_symbols} to new HashSet()
-	for {_c} in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=<>!?_" split at "":
+	for {_c} in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=<>!?_:" split at "":
 		{-allowed_symbols}.add({_c})
 
 	set {-handlers} to new HashMap()

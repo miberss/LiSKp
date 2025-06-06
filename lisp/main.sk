@@ -8,10 +8,11 @@ function main(file_name: string = "hello_world.lsp") :: object:
 	set {_input::*} to file_read_lines({_file})
 
 	sm_log("Output of {1}:", ({_file_name}))
-	sm_log("[1] -> ", join {_input::*} with "; ")
-	set {_now} to now
-	set {_output} to parse({_input::*})
-	sm_log("parsed [1] in [2]ms", ({_output}, time since {_now} / 1 tick * 100))
+	loop {_input::*}:
+		sm_log("%loop-counter%: [1];", loop-value)
+	
+	set {_time} to parse({_input::*})
+	sm_log("parsed [1] in [2]", ({_file_name}, {_time}))
 
 on script load:
 	main("lambda.lsp")
@@ -20,23 +21,24 @@ function default_env() :: struct:
 	set {_env} to Environment("_ENV")
 
 	set {_variables} to new HashMap()
-	{_variables}.put("+", "+")
-	{_variables}.put("*", "*")
-	{_variables}.put("-", "-")
-	{_variables}.put("/", "/")
-	{_variables}.put("^", "^")
-	{_variables}.put("<", "<")
-	{_variables}.put(">", ">")
-	{_variables}.put("=", "=")
-	{_variables}.put("<=", "<=")
-	{_variables}.put(">=", ">=")
+	{_variables}.put("+", "add")
+	{_variables}.put("*", "mul")
+	{_variables}.put("-", "sub")
+	{_variables}.put("/", "div")
+	{_variables}.put("^", "pow")
+	{_variables}.put("<", "less_than")
+	{_variables}.put(">", "greater_than")
+	{_variables}.put("==", "equal")
+	{_variables}.put("<=", "less_than_or_equal")
+	{_variables}.put(">=", "greater_than_or_equal")
 	{_variables}.put("reverse", "reverse")
 	{_variables}.put("print", "print")
+	{_variables}.put("?", "print")
 	set {_env}->variables to {_variables}
 
 	set {_special_forms} to new HashMap()
-	{_special_forms}.put("define", "define")
-	{_special_forms}.put("lambda", "lambda")
+	{_special_forms}.put("def", "define")
+	{_special_forms}.put("fn", "lambda")
 	{_special_forms}.put("if", "if")
 	{_special_forms}.put("and", "and")
 	{_special_forms}.put("or", "or")

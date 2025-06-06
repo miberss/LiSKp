@@ -1,2 +1,2 @@
-(define x 10)
+(def x 10)
 (print x)

@@ -1,0 +1,8 @@
+function square(x: integer) :: integer:
+	return {_x} * {_x}
+
+function sum_of_squares(a: integer, b: integer) :: integer:
+	return square({_a}) + square({_b})
+
+on script load:
+	broadcast sum_of_squares(3, 4)

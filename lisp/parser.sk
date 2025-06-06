@@ -2,15 +2,19 @@ using for loops
 
 
 function parse(inputs: strings) :: string:
+	set {_now} to now
 	set {_env} to default_env()
 	for {_input} in {_inputs::*}:
 		set {_lexer} to new_lexer({_input})
 		set {_token} to next_token({_lexer})
 		set {_state} to ParserState({_lexer}, {_token})
+		set {_now} to unix timestamp of now
 		set {_expr} to parse_expression({_state})
+		# set {_delay} to "%((unix timestamp of now) - {_now}) * 1000%ms"
+		# sm_log( "parsed expression {1}, took [2]", ({_expr}, {_delay}) )
 		set {_result::*} to eval({_expr}, {_env})
 		# sm_log("%{_result::*}% %debug_dump({_expr})%")
-	return ""
+	return "%((unix timestamp of now) - {_now}) * 1000%ms"
 
 function parse_expression(state: struct) :: struct:
 	set {_type} to {_state}->token->type
